@@ -37,7 +37,33 @@ function getAgeGroup(age) {
 }
 
 // -----------------------------
-// 3. Survey questions with skip logic
+// 3. Helper: get cigarette rows up to current age
+// -----------------------------
+function getCigaretteRowsForAge(age) {
+  const allRows = [
+    { key: "under_18", label: "Under 18", maxAge: 17 },
+    { key: "18_29", label: "18-29", maxAge: 29 },
+    { key: "30_39", label: "30-39", maxAge: 39 },
+    { key: "40_49", label: "40-49", maxAge: 49 },
+    { key: "50_59", label: "50-59", maxAge: 59 },
+    { key: "60_plus", label: "60+", maxAge: Infinity }
+  ];
+
+  const rows = [];
+
+  for (const row of allRows) {
+    rows.push({ key: row.key, label: row.label });
+
+    if (age <= row.maxAge) {
+      break;
+    }
+  }
+
+  return rows;
+}
+
+// -----------------------------
+// 4. Survey questions with skip logic
 // -----------------------------
 const questions = [
   {
@@ -130,7 +156,20 @@ const questions = [
     id: "family_history",
     text: "Do you have a family history of diabetes or heart disease?",
     type: "yes_no",
-    next: "cigarettes_by_age_bin"
+    next: "smoked_cigarettes_past"
+  },
+
+  {
+    id: "smoked_cigarettes_past",
+    text: "Have you smoked cigarettes in the past?",
+    type: "yes_no",
+    next: (answers) => {
+      if (answers.smoked_cigarettes_past === "yes") {
+        return "cigarettes_by_age_bin";
+      }
+
+      return "end";
+    }
   },
 
   {
@@ -140,14 +179,7 @@ const questions = [
     rowHeader: "Age Bin",
     columnHeader: "Cigarettes Per Day",
     placeholder: "Select cigarettes/day",
-    rows: [
-      { key: "under_18", label: "Under 18" },
-      { key: "18_29", label: "18-29" },
-      { key: "30_39", label: "30-39" },
-      { key: "40_49", label: "40-49" },
-      { key: "50_59", label: "50-59" },
-      { key: "60_plus", label: "60+" }
-    ],
+    getRows: (answers) => getCigaretteRowsForAge(answers.age),
     columns: [
       { key: "0", label: "0" },
       { key: "1_5", label: "1-5" },
@@ -160,20 +192,20 @@ const questions = [
 ];
 
 // -----------------------------
-// 4. Survey state
+// 5. Survey state
 // -----------------------------
 let answers = {};
 let currentQuestionId = "dob";
 
 // -----------------------------
-// 5. Get current question
+// 6. Get current question
 // -----------------------------
 function getCurrentQuestion() {
   return questions.find(q => q.id === currentQuestionId);
 }
 
 // -----------------------------
-// 6. Render question on page
+// 7. Render question on page
 // -----------------------------
 function renderQuestion() {
   const container = document.getElementById("question-container");
@@ -197,11 +229,13 @@ function renderQuestion() {
     for (let y = currentYear; y >= MIN_BIRTH_YEAR; y--) {
       yearOptions.push(`<option value="${y}">${y}</option>`);
     }
+
     const dayOptions = [];
     for (let d = 1; d <= 31; d++) {
       const val = String(d).padStart(2, "0");
       dayOptions.push(`<option value="${val}">${d}</option>`);
     }
+
     inputHtml = `
       <div class="dob-selects">
         <select id="dob-month">
@@ -229,15 +263,11 @@ function renderQuestion() {
         </select>
       </div>
     `;
-  }
-
-  if (question.type === "number") {
+  } else if (question.type === "number") {
     inputHtml = `
       <input type="number" id="answer-input" min="0" />
     `;
-  }
-
-  if (question.type === "yes_no") {
+  } else if (question.type === "yes_no") {
     inputHtml = `
       <select id="answer-input">
         <option value="">Select an answer</option>
@@ -245,9 +275,7 @@ function renderQuestion() {
         <option value="no">No</option>
       </select>
     `;
-  }
-
-  if (question.type === "select") {
+  } else if (question.type === "select") {
     inputHtml = `
       <select id="answer-input">
         <option value="">Select an answer</option>
@@ -256,9 +284,11 @@ function renderQuestion() {
         `).join("")}
       </select>
     `;
-  }
+  } else if (question.type === "grid") {
+    const gridRows = typeof question.getRows === "function"
+      ? question.getRows(answers)
+      : question.rows;
 
-  if (question.type === "grid") {
     inputHtml = `
       <table class="grid-table">
         <thead>
@@ -268,7 +298,7 @@ function renderQuestion() {
           </tr>
         </thead>
         <tbody>
-          ${question.rows.map(row => `
+          ${gridRows.map(row => `
             <tr>
               <td>${row.label}</td>
               <td>
@@ -288,6 +318,8 @@ function renderQuestion() {
         </tbody>
       </table>
     `;
+  } else {
+    inputHtml = `<p>Unsupported question type.</p>`;
   }
 
   container.innerHTML = `
@@ -299,7 +331,7 @@ function renderQuestion() {
 }
 
 // -----------------------------
-// 7. Save answer and move forward
+// 8. Save answer and move forward
 // -----------------------------
 function answerCurrentQuestion() {
   const question = getCurrentQuestion();
@@ -307,9 +339,18 @@ function answerCurrentQuestion() {
   let answerValue;
 
   if (question.type === "date") {
-    const month = document.getElementById("dob-month").value;
-    const day = document.getElementById("dob-day").value;
-    const year = document.getElementById("dob-year").value;
+    const monthEl = document.getElementById("dob-month");
+    const dayEl = document.getElementById("dob-day");
+    const yearEl = document.getElementById("dob-year");
+
+    if (!monthEl || !dayEl || !yearEl) {
+      alert("Date of birth inputs are missing. Please refresh and try again.");
+      return;
+    }
+
+    const month = monthEl.value;
+    const day = dayEl.value;
+    const year = yearEl.value;
 
     if (!month || !day || !year) {
       alert("Please select a complete date of birth.");
@@ -318,7 +359,12 @@ function answerCurrentQuestion() {
 
     answerValue = `${year}-${month}-${day}`;
 
-    const parsedDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    const parsedDate = new Date(
+      parseInt(year, 10),
+      parseInt(month, 10) - 1,
+      parseInt(day, 10)
+    );
+
     if (
       isNaN(parsedDate.getTime()) ||
       parsedDate.getFullYear() !== parseInt(year, 10) ||
@@ -329,11 +375,15 @@ function answerCurrentQuestion() {
       return;
     }
   } else if (question.type === "grid") {
+    const gridRows = typeof question.getRows === "function"
+      ? question.getRows(answers)
+      : question.rows;
+
     const selects = document.querySelectorAll(
       `select[data-grid-question="${question.id}"]`
     );
 
-    if (selects.length !== question.rows.length) {
+    if (selects.length !== gridRows.length) {
       alert("Something went wrong loading this question. Please refresh and try again.");
       return;
     }
@@ -352,15 +402,27 @@ function answerCurrentQuestion() {
 
       answerValue[rowKey] = value;
     }
-  } else {
+  } else if (
+    question.type === "number" ||
+    question.type === "yes_no" ||
+    question.type === "select"
+  ) {
     const input = document.getElementById("answer-input");
 
-    if (!input || !input.value) {
+    if (!input) {
+      alert("Input field is missing. Please refresh and try again.");
+      return;
+    }
+
+    if (!input.value) {
       alert("Please answer the question before continuing.");
       return;
     }
 
     answerValue = input.value;
+  } else {
+    alert(`Unsupported question type: ${question.type}`);
+    return;
   }
 
   answers[question.id] = answerValue;
@@ -375,7 +437,7 @@ function answerCurrentQuestion() {
 }
 
 // -----------------------------
-// 8. Final summary
+// 9. Final summary
 // -----------------------------
 function renderSummary() {
   const container = document.getElementById("question-container");
@@ -393,7 +455,7 @@ function renderSummary() {
 }
 
 // -----------------------------
-// 9. Start app
+// 10. Start app
 // -----------------------------
 document.getElementById("next-btn").addEventListener("click", answerCurrentQuestion);
 

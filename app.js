@@ -236,7 +236,7 @@ function renderQuestion() {
                 <select
                   data-grid-question="${question.id}"
                   data-row-key="${row.key}"
-                  aria-label="Select ${question.columnHeader || "value"} for ${row.label}"
+                  aria-label="Select ${(question.columnHeader || "value").toLowerCase()} for ${row.label}"
                 >
                   <option value="">${question.placeholder || "Select value"}</option>
                   ${question.columns.map(column => `
@@ -273,7 +273,7 @@ function answerCurrentQuestion() {
 
     for (const rowInput of rowInputs) {
       if (!rowInput.value) {
-        alert("Please complete all age bin selections before continuing.");
+        alert("Please complete all row selections before continuing.");
         return;
       }
 

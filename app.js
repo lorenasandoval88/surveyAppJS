@@ -134,6 +134,7 @@ const questions = [
     type: "grid",
     rowHeader: "Age Bin",
     columnHeader: "Cigarettes Per Day",
+    placeholder: "Select cigarettes/day",
     rows: [
       { key: "under_18", label: "Under 18" },
       { key: "18_29", label: "18-29" },
@@ -233,7 +234,7 @@ function renderQuestion() {
               <td>${row.label}</td>
               <td>
                 <select data-grid-question="${question.id}" data-row-key="${row.key}">
-                  <option value="">Select cigarettes/day</option>
+                  <option value="">${question.placeholder || "Select value"}</option>
                   ${question.columns.map(column => `
                     <option value="${column.key}">${column.label}</option>
                   `).join("")}

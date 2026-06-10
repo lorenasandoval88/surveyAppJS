@@ -1,4 +1,9 @@
 // -----------------------------
+// 0. Configuration
+// -----------------------------
+const MIN_BIRTH_YEAR = 1900;
+
+// -----------------------------
 // 1. Helper: calculate age from DOB
 // -----------------------------
 function calculateAge(dobString) {
@@ -187,8 +192,42 @@ function renderQuestion() {
   let inputHtml = "";
 
   if (question.type === "date") {
+    const currentYear = new Date().getFullYear();
+    const yearOptions = [];
+    for (let y = currentYear; y >= MIN_BIRTH_YEAR; y--) {
+      yearOptions.push(`<option value="${y}">${y}</option>`);
+    }
+    const dayOptions = [];
+    for (let d = 1; d <= 31; d++) {
+      const val = String(d).padStart(2, "0");
+      dayOptions.push(`<option value="${val}">${d}</option>`);
+    }
     inputHtml = `
-      <input type="date" id="answer-input" />
+      <div class="dob-selects">
+        <select id="dob-month">
+          <option value="">Month</option>
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        <select id="dob-day">
+          <option value="">Day</option>
+          ${dayOptions.join("")}
+        </select>
+        <select id="dob-year">
+          <option value="">Year</option>
+          ${yearOptions.join("")}
+        </select>
+      </div>
     `;
   }
 
@@ -265,22 +304,30 @@ function renderQuestion() {
 function answerCurrentQuestion() {
   const question = getCurrentQuestion();
 
-  if (question.type === "grid") {
-    const rowInputs = Array.from(
-      document.querySelectorAll(`select[data-grid-question="${question.id}"]`)
-    );
-    const gridAnswer = {};
+  let answerValue;
 
-    for (const rowInput of rowInputs) {
-      if (!rowInput.value) {
-        alert("Please complete all row selections before continuing.");
-        return;
-      }
+  if (question.type === "date") {
+    const month = document.getElementById("dob-month").value;
+    const day = document.getElementById("dob-day").value;
+    const year = document.getElementById("dob-year").value;
 
-      gridAnswer[rowInput.dataset.rowKey] = rowInput.value;
+    if (!month || !day || !year) {
+      alert("Please select a complete date of birth.");
+      return;
     }
 
-    answers[question.id] = gridAnswer;
+    answerValue = `${year}-${month}-${day}`;
+
+    const parsedDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    if (
+      isNaN(parsedDate.getTime()) ||
+      parsedDate.getFullYear() !== parseInt(year, 10) ||
+      parsedDate.getMonth() + 1 !== parseInt(month, 10) ||
+      parsedDate.getDate() !== parseInt(day, 10)
+    ) {
+      alert("Please select a valid date of birth.");
+      return;
+    }
   } else {
     const input = document.getElementById("answer-input");
 
@@ -289,8 +336,10 @@ function answerCurrentQuestion() {
       return;
     }
 
-    answers[question.id] = input.value;
+    answerValue = input.value;
   }
+
+  answers[question.id] = answerValue;
 
   if (typeof question.next === "function") {
     currentQuestionId = question.next(answers);

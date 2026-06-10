@@ -233,7 +233,11 @@ function renderQuestion() {
             <tr>
               <td>${row.label}</td>
               <td>
-                <select data-grid-question="${question.id}" data-row-key="${row.key}">
+                <select
+                  data-grid-question="${question.id}"
+                  data-row-key="${row.key}"
+                  aria-label="${row.label} - ${question.columnHeader || "Value"}"
+                >
                   <option value="">${question.placeholder || "Select value"}</option>
                   ${question.columns.map(column => `
                     <option value="${column.key}">${column.label}</option>

@@ -1,4 +1,9 @@
 // -----------------------------
+// 0. Configuration
+// -----------------------------
+const MIN_BIRTH_YEAR = 1900;
+
+// -----------------------------
 // 1. Helper: calculate age from DOB
 // -----------------------------
 function calculateAge(dobString) {
@@ -164,7 +169,7 @@ function renderQuestion() {
   if (question.type === "date") {
     const currentYear = new Date().getFullYear();
     const yearOptions = [];
-    for (let y = currentYear; y >= 1900; y--) {
+    for (let y = currentYear; y >= MIN_BIRTH_YEAR; y--) {
       yearOptions.push(`<option value="${y}">${y}</option>`);
     }
     const dayOptions = [];
@@ -256,7 +261,7 @@ function answerCurrentQuestion() {
 
     answerValue = `${year}-${month}-${day}`;
 
-    const parsedDate = new Date(answerValue);
+    const parsedDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
     if (
       isNaN(parsedDate.getTime()) ||
       parsedDate.getFullYear() !== parseInt(year, 10) ||

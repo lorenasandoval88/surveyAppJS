@@ -130,6 +130,31 @@ const questions = [
     id: "family_history",
     text: "Do you have a family history of diabetes or heart disease?",
     type: "yes_no",
+    next: "cigarettes_by_age_bin"
+  },
+
+  {
+    id: "cigarettes_by_age_bin",
+    text: "Cigarettes per day by age bin",
+    type: "grid",
+    rowHeader: "Age Bin",
+    columnHeader: "Cigarettes Per Day",
+    placeholder: "Select cigarettes/day",
+    rows: [
+      { key: "under_18", label: "Under 18" },
+      { key: "18_29", label: "18-29" },
+      { key: "30_39", label: "30-39" },
+      { key: "40_49", label: "40-49" },
+      { key: "50_59", label: "50-59" },
+      { key: "60_plus", label: "60+" }
+    ],
+    columns: [
+      { key: "0", label: "0" },
+      { key: "1_5", label: "1-5" },
+      { key: "6_10", label: "6-10" },
+      { key: "11_20", label: "11-20" },
+      { key: "21_plus", label: "21+" }
+    ],
     next: "end"
   }
 ];
@@ -230,6 +255,38 @@ function renderQuestion() {
           <option value="${option}">${option}</option>
         `).join("")}
       </select>
+    `;
+  }
+
+  if (question.type === "grid") {
+    inputHtml = `
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th>${question.rowHeader || "Row"}</th>
+            <th>${question.columnHeader || "Value"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${question.rows.map(row => `
+            <tr>
+              <td>${row.label}</td>
+              <td>
+                <select
+                  data-grid-question="${question.id}"
+                  data-row-key="${row.key}"
+                  aria-label="Select ${(question.columnHeader || "value").toLowerCase()} for ${row.label}"
+                >
+                  <option value="">${question.placeholder || "Select value"}</option>
+                  ${question.columns.map(column => `
+                    <option value="${column.key}">${column.label}</option>
+                  `).join("")}
+                </select>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
     `;
   }
 

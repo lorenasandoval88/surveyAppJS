@@ -301,54 +301,6 @@ function renderQuestion() {
 // -----------------------------
 // 7. Save answer and move forward
 // -----------------------------
-// function answerCurrentQuestion() {
-//   const question = getCurrentQuestion();
-
-//   let answerValue;
-
-//   if (question.type === "date") {
-//     const month = document.getElementById("dob-month").value;
-//     const day = document.getElementById("dob-day").value;
-//     const year = document.getElementById("dob-year").value;
-
-//     if (!month || !day || !year) {
-//       alert("Please select a complete date of birth.");
-//       return;
-//     }
-
-//     answerValue = `${year}-${month}-${day}`;
-
-//     const parsedDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-//     if (
-//       isNaN(parsedDate.getTime()) ||
-//       parsedDate.getFullYear() !== parseInt(year, 10) ||
-//       parsedDate.getMonth() + 1 !== parseInt(month, 10) ||
-//       parsedDate.getDate() !== parseInt(day, 10)
-//     ) {
-//       alert("Please select a valid date of birth.");
-//       return;
-//     }
-//   } else {
-//     const input = document.getElementById("answer-input");
-
-//     if (!input.value) {
-//       alert("Please answer the question before continuing.");
-//       return;
-//     }
-
-//     answerValue = input.value;
-//   }
-
-//   answers[question.id] = answerValue;
-
-//   if (typeof question.next === "function") {
-//     currentQuestionId = question.next(answers);
-//   } else {
-//     currentQuestionId = question.next;
-//   }
-
-//   renderQuestion();
-// }
 function answerCurrentQuestion() {
   const question = getCurrentQuestion();
 
@@ -381,14 +333,20 @@ function answerCurrentQuestion() {
       `select[data-grid-question="${question.id}"]`
     );
 
+    if (selects.length !== question.rows.length) {
+      alert("Something went wrong loading this question. Please refresh and try again.");
+      return;
+    }
+
     answerValue = {};
 
     for (const select of selects) {
       const rowKey = select.dataset.rowKey;
       const value = select.value;
 
-      if (!value) {
+      if (value === "") {
         alert("Please answer every row before continuing.");
+        select.focus();
         return;
       }
 
@@ -397,7 +355,7 @@ function answerCurrentQuestion() {
   } else {
     const input = document.getElementById("answer-input");
 
-    if (!input.value) {
+    if (!input || !input.value) {
       alert("Please answer the question before continuing.");
       return;
     }

@@ -125,6 +125,28 @@ const questions = [
     id: "family_history",
     text: "Do you have a family history of diabetes or heart disease?",
     type: "yes_no",
+    next: "cigarettes_by_age_bin"
+  },
+
+  {
+    id: "cigarettes_by_age_bin",
+    text: "Cigarettes per day by age bin",
+    type: "grid",
+    rows: [
+      { key: "under_18", label: "Under 18" },
+      { key: "18_29", label: "18-29" },
+      { key: "30_39", label: "30-39" },
+      { key: "40_49", label: "40-49" },
+      { key: "50_59", label: "50-59" },
+      { key: "60_plus", label: "60+" }
+    ],
+    columns: [
+      { key: "0", label: "0" },
+      { key: "1_5", label: "1-5" },
+      { key: "6_10", label: "6-10" },
+      { key: "11_20", label: "11-20" },
+      { key: "21_plus", label: "21+" }
+    ],
     next: "end"
   }
 ];
@@ -194,6 +216,34 @@ function renderQuestion() {
     `;
   }
 
+  if (question.type === "grid") {
+    inputHtml = `
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th>Age Bin</th>
+            <th>Cigarettes Per Day</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${question.rows.map(row => `
+            <tr>
+              <td>${row.label}</td>
+              <td>
+                <select data-grid-question="${question.id}" data-row-key="${row.key}">
+                  <option value="">Select cigarettes/day</option>
+                  ${question.columns.map(column => `
+                    <option value="${column.key}">${column.label}</option>
+                  `).join("")}
+                </select>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
   container.innerHTML = `
     <h2>${question.text}</h2>
     ${inputHtml}
@@ -207,14 +257,33 @@ function renderQuestion() {
 // -----------------------------
 function answerCurrentQuestion() {
   const question = getCurrentQuestion();
-  const input = document.getElementById("answer-input");
 
-  if (!input.value) {
-    alert("Please answer the question before continuing.");
-    return;
+  if (question.type === "grid") {
+    const rowInputs = Array.from(
+      document.querySelectorAll(`select[data-grid-question="${question.id}"]`)
+    );
+    const gridAnswer = {};
+
+    for (const rowInput of rowInputs) {
+      if (!rowInput.value) {
+        alert("Please answer every row before continuing.");
+        return;
+      }
+
+      gridAnswer[rowInput.dataset.rowKey] = rowInput.value;
+    }
+
+    answers[question.id] = gridAnswer;
+  } else {
+    const input = document.getElementById("answer-input");
+
+    if (!input.value) {
+      alert("Please answer the question before continuing.");
+      return;
+    }
+
+    answers[question.id] = input.value;
   }
-
-  answers[question.id] = input.value;
 
   if (typeof question.next === "function") {
     currentQuestionId = question.next(answers);

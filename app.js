@@ -132,6 +132,8 @@ const questions = [
     id: "cigarettes_by_age_bin",
     text: "Cigarettes per day by age bin",
     type: "grid",
+    rowHeader: "Age Bin",
+    columnHeader: "Cigarettes Per Day",
     rows: [
       { key: "under_18", label: "Under 18" },
       { key: "18_29", label: "18-29" },
@@ -221,8 +223,8 @@ function renderQuestion() {
       <table class="grid-table">
         <thead>
           <tr>
-            <th>Age Bin</th>
-            <th>Cigarettes Per Day</th>
+            <th>${question.rowHeader || "Row"}</th>
+            <th>${question.columnHeader || "Value"}</th>
           </tr>
         </thead>
         <tbody>

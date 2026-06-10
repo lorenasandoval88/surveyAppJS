@@ -255,6 +255,17 @@ function answerCurrentQuestion() {
     }
 
     answerValue = `${year}-${month}-${day}`;
+
+    const parsedDate = new Date(answerValue);
+    if (
+      isNaN(parsedDate.getTime()) ||
+      parsedDate.getFullYear() !== parseInt(year, 10) ||
+      parsedDate.getMonth() + 1 !== parseInt(month, 10) ||
+      parsedDate.getDate() !== parseInt(day, 10)
+    ) {
+      alert("Please select a valid date of birth.");
+      return;
+    }
   } else {
     const input = document.getElementById("answer-input");
 
